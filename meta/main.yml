@@ -1,16 +1,29 @@
 ---
 galaxy_info:
-  author: Malk’Zameth
-  description: Java8 from Oracle, using the webupd8 ppa
+  author: Malk’Zameth (CentOS support by Igor Mikhaylov <igor@dev366.com>)
+  description: Install Java8 from Oracle
+  company: http://dev366.com
+
+  issue_tracker_url: https://github.com/dev366/ansible-java8-oracle/issues
+
   license: GPLv3
+
   min_ansible_version: 1.6
+
   platforms:
     - name: Ubuntu
       versions:
-        - saucy
         - trusty
+    - name: EL
+      versions:
+        - 7
+
   categories:
     - development
     - system
+    - installer
+    - java
+    - ubuntu
+    - centos
 
 dependencies: []

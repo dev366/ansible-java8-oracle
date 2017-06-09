@@ -1,0 +1,46 @@
+---
+# From https://www.digitalocean.com/community/tutorials/how-to-install-java-on-centos-and-fedora
+
+- name: Check if java package is installed
+  yum: list="{{ rpm_package_name }}"
+  register: is_installed
+- debug: var=is_installed
+
+- set_fact: pid="{{ lookup('pipe', 'echo $PPID') }}"
+- debug: var=pid
+
+- name: Generate a name for a temp rpm file
+  set_fact: rpm_package_tempfile=/tmp/java8-pid{{ pid }}-rnd{{ 999999 | random }}.temp.rpm
+- debug: var=rpm_package_tempfile
+
+- block:
+  - name: Download rpm package
+    command: 'wget --output-document={{ rpm_package_tempfile }} --continue --no-cookies --no-check-certificate --header "Cookie: gpw_e24=http%3A%2F%2Fwww.oracle.com%2F; oraclelicense=accept-securebackup-cookie" "{{ rpm_package_url }}"'
+    args:
+      creates: "{{ rpm_package_tempfile }}"
+    notify: Clean up temp rpm file
+
+  - name: Install Java8 from a local rpm file
+    become: yes
+    yum: name="{{ rpm_package_tempfile }}" state=present
+  when: not ((is_installed.results|length > 0) and (is_installed.results[0].yumstate == 'installed'))
+
+- name: Set Java8 as default
+  become: yes
+  alternatives:
+    name: "{{ item.name }}"
+    link: "/usr/bin/{{ item.name }}"
+    path: "/usr/java/{{ rpm_package_name }}/{{ item.path }}"
+  with_items:
+    - { name: java, path: jre/bin/java }
+    - { name: javac, path: bin/javac }
+    - { name: jar, path: bin/jar }
+
+- name: Add java environment variables to /etc/environment
+  lineinfile: dest=/etc/environment
+              regexp="^export {{ item.var }}"
+              line="export {{ item.var }}={{ item.value }}"
+              state=present
+  with_items:
+    - { var: "JAVA_HOME", value: "/usr/java/{{ rpm_package_name }}" }
+    - { var: "JRE_HOME", value: "/usr/java/{{ rpm_package_name }}/jre" }

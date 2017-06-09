@@ -1,20 +1,18 @@
 ---
-- name: Install add-apt-repostory
-  sudo: yes
-  apt: name=software-properties-common state=latest
+- name: Determine OS distribution name
+  set_fact: os_distribution={{ ansible_distribution | lower }}
+- debug: var=os_distribution
 
-- name: Add Oracle Java Repository
-  sudo: yes
-  apt_repository: repo='ppa:webupd8team/java'
+- name: Determine OS major version
+  set_fact: os_major_version={{ ansible_distribution_version.split('.')[0] | lower }}
+- debug: var=os_major_version
 
-- name: Accept Java 8 License
-  sudo: yes
-  debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+- include: java8-install-centos-7.yml
+  static: no
+  when: os_distribution == 'centos' and (ansible_distribution_version | version_compare('7', '>='))
+#  when: os_distribution == 'centos' and os_major_version in ['7']
 
-- name: Install Oracle Java 8
-  sudo: yes
-  apt: name={{item}} state=latest
-  with_items:
-    - oracle-java8-installer
-    - ca-certificates
-    - oracle-java8-set-default
+- include: java8-install-ubuntu-14.yml
+  static: no
+  when: os_distribution == 'ubuntu' and (ansible_distribution_version | version_compare('14', '>='))
+#  when: os_distribution == 'ubuntu' and os_major_version in ['14', '16']
